@@ -55,6 +55,11 @@ const words = ref([
 ]);
 
 const user_input = ref("");
+const words_box_width = ref(800);
+
+const word_per_line = ref(0);
+
+const words_count = ref(0);
 
 const timer = ref(0);
 const elapsed_time = ref(0);
@@ -69,8 +74,8 @@ const checkInput = () => {
 
   // If last char is a space
   if (last_char === " ") {
-    // Remove first word from words variable
-    const current_word = words.value.shift();
+    // Get first word from words variable
+    const current_word = words.value[words_count.value];
     const typed_word = user_input.value.trim();
 
     if (current_word == typed_word) {
@@ -80,11 +85,23 @@ const checkInput = () => {
       console.log("Correct");
     }
 
+    // Increment words_count by 1
+    words_count.value += 1;
+
     // Calculate WPM : a word has 5 characters on average
     wpm.value = Math.round(char_count.value / 5 / (elapsed_time.value / 60));
 
     // Clear user input
     user_input.value = "";
+
+    // If an entire line has been typed
+    if (words_count.value == word_per_line.value) {
+      // Remove the current line from words variable
+      words.value.splice(0, word_per_line.value);
+
+      // Reset words_count
+      words_count.value = 0;
+    }
   }
 };
 
@@ -97,6 +114,11 @@ window.addEventListener("keydown", (e) => {
 });
 
 onMounted(() => {
+  // Based on the window size, get the number of words per line
+  word_per_line.value = Math.floor(words_box_width.value / 65);
+
+  console.log(word_per_line.value);
+
   // Start timer
   timer.value = setInterval(() => {
     // Increment elapsed_time by 1
@@ -108,7 +130,7 @@ onMounted(() => {
 <template>
   <div>
     <!-- Rectangle box for displaying words, using words variable -->
-    <div class="row">
+    <div class="row" style="width: 800px">
       <div class="col-1" v-for="word in words" :key="word">
         {{ word }}
       </div>
