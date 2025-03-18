@@ -4,8 +4,13 @@ import { ref, onMounted } from "vue";
 const NUMBER_OF_WORDS = 200;
 const CHAR_PER_LINE = 64;
 
+const GAME_STATES = {
+  NOT_STARTED: 0,
+  IN_PROGRESS: 1
+};
+
 // Word state enum (not typed, correct, incorrect)
-const WORD_STATE = {
+const WORD_STATES = {
   NOT_TYPED: 0,
   CORRECT: 1,
   INCORRECT: 2,
@@ -68,6 +73,7 @@ const AVAILABLE_WORLDS = ref([
 ]);
 
 const words = ref([]);
+const game_state = ref(GAME_STATES.NOT_STARTED);
 
 const user_input = ref("");
 
@@ -82,6 +88,18 @@ const wpm = ref(0);
 
 // Function for checking if user input is correct
 const checkInput = () => {
+  // If the game is not started
+  if (game_state.value === GAME_STATES.NOT_STARTED) {
+    // Start the game and timer
+    game_state.value = GAME_STATES.IN_PROGRESS;
+    
+    // Start timer
+    timer.value = setInterval(() => {
+      // Increment elapsed_time by 1
+      elapsed_time.value += 0.01;
+    }, 10);
+  }
+
   // Get the last char of the user input
   const last_char = user_input.value[user_input.value.length - 1];
 
@@ -96,11 +114,11 @@ const checkInput = () => {
     if (current_word == typed_word) {
 
       // Update state of current word to correct
-      words.value[words_count.value].state = WORD_STATE.CORRECT;
+      words.value[words_count.value].state = WORD_STATES.CORRECT;
     }
     else {
       // Update state of current word to incorrect
-      words.value[words_count.value].state = WORD_STATE.INCORRECT;
+      words.value[words_count.value].state = WORD_STATES.INCORRECT;
     }
 
     // If the row is completed, scroll to the next row
@@ -112,7 +130,7 @@ const checkInput = () => {
       char_line_count.value = 0;
     }
 
-    words.value[words_count.value + 1].state = WORD_STATE.TO_TYPE;
+    words.value[words_count.value + 1].state = WORD_STATES.TO_TYPE;
 
     // Increment words_count by 1
     words_count.value += 1;
@@ -124,10 +142,10 @@ const checkInput = () => {
   } else if (current_word.startsWith(typed_word)) {
     // Update state of current word to to_type
     char_count.value += 1;
-    words.value[words_count.value].state = WORD_STATE.TO_TYPE;
+    words.value[words_count.value].state = WORD_STATES.TO_TYPE;
   } else {
     // Update state of current word to currently_incorrect
-    words.value[words_count.value].state = WORD_STATE.CURRENTLY_INCORRECT;
+    words.value[words_count.value].state = WORD_STATES.CURRENTLY_INCORRECT;
   }
 
   // Calculate WPM : a word has 5 characters on average
@@ -142,6 +160,9 @@ window.addEventListener("keydown", (e) => {
 });
 
 const initialize = () => {
+  game_state.value = GAME_STATES.NOT_STARTED;
+
+
   // Clear user input
   user_input.value = "";
   words_count.value = 0;
@@ -155,23 +176,17 @@ const initialize = () => {
   for (let i = 0; i < NUMBER_OF_WORDS; i++) {
     words.value[i] = {
       word: AVAILABLE_WORLDS.value[Math.floor(Math.random() * AVAILABLE_WORLDS.value.length)],
-      state: WORD_STATE.NOT_TYPED,
+      state: WORD_STATES.NOT_TYPED,
     };
   }
 
   // Set the first word to TO_TYPE
-  words.value[0].state = WORD_STATE.TO_TYPE;
+  words.value[0].state = WORD_STATES.TO_TYPE;
 
   // Stop timer
   clearInterval(timer.value);
   elapsed_time.value = 0;
   wpm.value = 0;
-
-  // Start timer
-  timer.value = setInterval(() => {
-    // Increment elapsed_time by 1
-    elapsed_time.value += 1;
-  }, 1000);
 }
 
 onMounted(() => {
@@ -184,6 +199,10 @@ onMounted(() => {
     width: 100%;
     text-align: center;
     padding-right: 0px;
+    
+  }
+
+  * {
     font-size: 20px;
   }
 
@@ -230,7 +249,7 @@ onMounted(() => {
 
     <!-- Input for user typing input -->
     <div id="input-box">
-      <q-input filled v-model="user_input" @update:model-value="checkInput"/>
+      <q-input id="input" filled v-model="user_input" @update:model-value="checkInput"/>
     </div>
 
   </div>
