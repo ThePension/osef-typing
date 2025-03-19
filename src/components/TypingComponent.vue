@@ -1,8 +1,8 @@
 <script setup>
 import { ref, onMounted } from "vue";
 
-const NUMBER_OF_WORDS = 200;
-const CHAR_PER_LINE = 64;
+const NUMBER_OF_WORDS = 50;
+let CHAR_PER_LINE = 64;
 
 const GAME_STATES = {
   NOT_STARTED: 0,
@@ -126,6 +126,14 @@ const checkInput = () => {
       // Remove the first line (n first word)
       words.value.splice(0, words_count.value + 1);
 
+      // Add a new line
+      for (let i = 0; i < words_count.value + 1; i++) {
+        words.value.push({
+          word: AVAILABLE_WORLDS.value[Math.floor(Math.random() * AVAILABLE_WORLDS.value.length)],
+          state: WORD_STATES.NOT_TYPED,
+        });
+      }
+
       words_count.value = -1;
       char_line_count.value = 0;
     }
@@ -162,7 +170,6 @@ window.addEventListener("keydown", (e) => {
 const initialize = () => {
   game_state.value = GAME_STATES.NOT_STARTED;
 
-
   // Clear user input
   user_input.value = "";
   words_count.value = 0;
@@ -191,6 +198,9 @@ const initialize = () => {
 
 onMounted(() => {
   initialize();
+
+  // Calculate char per line based on the width of the window
+  CHAR_PER_LINE = Math.floor(Math.min(800, Math.floor(window.innerWidth)) / 12.5);
 });
 </script>
 
@@ -199,7 +209,6 @@ onMounted(() => {
     width: 100%;
     text-align: center;
     padding-right: 0px;
-    
   }
 
   * {
@@ -211,7 +220,7 @@ onMounted(() => {
     border-radius: 5px;
     padding: 10px;
     margin-top: 20px;
-    height: 80px;
+    height: 77px;
     overflow-y: hidden;
     overflow: hidden;
   }
@@ -234,7 +243,7 @@ onMounted(() => {
     <div id="wpm">{{ wpm }} WPM</div>
 
     <!-- Rectangle box for displaying words, using words variable -->
-    <div class="row" style="width: 800px">
+    <div class="row" style="max-width: 800px">
 
       <div id="words_box" class="col" style="word-wrap: break-word;">
         <span v-for="word in words" :key="word">
