@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useLanguageStore } from "src/stores/language";
-import WORDS_DATABASE from "src/assets/words.json";
+import TEXTS_DATABASE from "src/assets/texts.json";
 
 const languageStore = useLanguageStore();
 
@@ -12,14 +12,13 @@ languageStore.$onAction((event) => {
   }
 
   // Update words based on the selected language
-  AVAILABLE_WORDS = WORDS_DATABASE[event["args"][0]];
+  AVAILABLE_TEXTS = TEXTS_DATABASE[event["args"][0]];
 
   initialize();
 }, false);
 
-let AVAILABLE_WORDS = WORDS_DATABASE[languageStore.getLanguage()];
+let AVAILABLE_TEXTS = TEXTS_DATABASE[languageStore.getLanguage()];
 
-const NUMBER_OF_WORDS = 50;
 let CHAR_PER_LINE = 64;
 
 const GAME_STATES = {
@@ -91,16 +90,21 @@ const checkInput = () => {
       // Remove the first line (n first word)
       words.value.splice(0, words_count.value + 1);
 
-      // Add a new line
-      for (let i = 0; i < words_count.value + 1; i++) {
-        words.value.push({
-          word: AVAILABLE_WORDS[Math.floor(Math.random() * AVAILABLE_WORDS.length)],
-          state: WORD_STATES.NOT_TYPED,
-        });
-      }
-
       words_count.value = -1;
       char_line_count.value = 0;
+    }
+
+    if (words.value.length <= 24) {
+      // Append a new text
+      const text = AVAILABLE_TEXTS[Math.floor(Math.random() * AVAILABLE_TEXTS.length)];
+
+      // Append words from text
+      words.value.push(...text.split(" ").map((word) => {
+        return {
+          word: word,
+          state: WORD_STATES.NOT_TYPED,
+        };
+      }));
     }
 
     words.value[words_count.value + 1].state = WORD_STATES.TO_TYPE;
@@ -144,13 +148,15 @@ const initialize = () => {
   // Focus on the input box
   document.querySelector(".q-input").focus();
 
-  // Initialize words
-  for (let i = 0; i < NUMBER_OF_WORDS; i++) {
-    words.value[i] = {
-      word: AVAILABLE_WORDS[Math.floor(Math.random() * AVAILABLE_WORDS.length)],
+  const text = AVAILABLE_TEXTS[Math.floor(Math.random() * AVAILABLE_TEXTS.length)];
+
+  // Initialize words from text
+  words.value = text.split(" ").map((word) => {
+    return {
+      word: word,
       state: WORD_STATES.NOT_TYPED,
     };
-  }
+  });
 
   // Set the first word to TO_TYPE
   words.value[0].state = WORD_STATES.TO_TYPE;

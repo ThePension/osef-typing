@@ -1,9 +1,9 @@
 <script setup>
-import WordsTypingComponent from "src/components/WordsTypingComponent.vue";
+import TextTypingComponent from "src/components/TextTypingComponent.vue";
 </script>
 
 <template>
   <q-page class="flex flex-center">
-    <WordsTypingComponent />
+    <TextTypingComponent />
   </q-page>
 </template>
