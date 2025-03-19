@@ -1,5 +1,23 @@
 <script setup>
 import { ref, onMounted } from "vue";
+import { useLanguageStore } from "src/stores/language";
+import WORDS_DATABASE from "src/assets/words.json";
+
+const languageStore = useLanguageStore();
+
+// Subscribed to the language store and update the words based on the selected language
+languageStore.$onAction((event) => {
+  if (event.name !== "setLanguage") {
+    return;
+  }
+
+  // Update words based on the selected language
+  AVAILABLE_WORLDS = WORDS_DATABASE[event["args"][0]];
+
+  initialize();
+}, false);
+
+let AVAILABLE_WORLDS = WORDS_DATABASE[languageStore.getLanguage()];
 
 const NUMBER_OF_WORDS = 50;
 let CHAR_PER_LINE = 64;
@@ -18,59 +36,6 @@ const WORD_STATES = {
   // If the currently typed word is incorrect
   CURRENTLY_INCORRECT: 4,
 };
-
-const AVAILABLE_WORLDS = ref([
-  "le",
-  "de",
-  "un",
-  "à",
-  "être",
-  "et",
-  "en",
-  "avoir",
-  "que",
-  "pour",
-  "dans",
-  "ce",
-  "il",
-  "qui",
-  "ne",
-  "sur",
-  "se",
-  "pas",
-  "plus",
-  "pouvoir",
-  "par",
-  "je",
-  "avec",
-  "tout",
-  "faire",
-  "son",
-  "mettre",
-  "autre",
-  "on",
-  "mais",
-  "nous",
-  "comme",
-  "si",
-  "ou",
-  "sa",
-  "lui",
-  "devoir",
-  "vouloir",
-  "y",
-  "voir",
-  "enfant",
-  "bien",
-  "aller",
-  "encore",
-  "très",
-  "leur",
-  "dire",
-  "elle",
-  "prendre",
-  "deux",
-]);
 
 const words = ref([]);
 const game_state = ref(GAME_STATES.NOT_STARTED);
@@ -129,7 +94,7 @@ const checkInput = () => {
       // Add a new line
       for (let i = 0; i < words_count.value + 1; i++) {
         words.value.push({
-          word: AVAILABLE_WORLDS.value[Math.floor(Math.random() * AVAILABLE_WORLDS.value.length)],
+          word: AVAILABLE_WORLDS[Math.floor(Math.random() * AVAILABLE_WORLDS.length)],
           state: WORD_STATES.NOT_TYPED,
         });
       }
@@ -182,7 +147,7 @@ const initialize = () => {
   // Initialize words
   for (let i = 0; i < NUMBER_OF_WORDS; i++) {
     words.value[i] = {
-      word: AVAILABLE_WORLDS.value[Math.floor(Math.random() * AVAILABLE_WORLDS.value.length)],
+      word: AVAILABLE_WORLDS[Math.floor(Math.random() * AVAILABLE_WORLDS.length)],
       state: WORD_STATES.NOT_TYPED,
     };
   }
@@ -197,6 +162,8 @@ const initialize = () => {
 }
 
 onMounted(() => {
+  console.log(AVAILABLE_WORLDS);
+
   initialize();
 
   // Calculate char per line based on the width of the window
