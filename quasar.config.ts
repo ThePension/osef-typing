@@ -9,10 +9,9 @@
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js
 
 
-const { configure } = require('quasar/wrappers');
+import { defineConfig } from '#q-app/wrappers'
 
-
-module.exports = configure(function (/* ctx */) {
+export default defineConfig((ctx) => {
   return {
     eslint: {
       // fix: true,
@@ -84,6 +83,15 @@ module.exports = configure(function (/* ctx */) {
       // vitePlugins: [
       //   [ 'package-name', { ..options.. } ]
       // ]
+
+      typescript: {
+        strict: true, // (recommended) enables strict settings for TypeScript
+        vueShim: true, // required when using ESLint with type-checked rules, will generate a shim file for `*.vue` files
+        // extendTsConfig (tsConfig) {
+        //   // You can use this hook to extend tsConfig dynamically
+        //   // For basic use cases, you can still update the usual tsconfig.json file to override some settings
+        // },
+      }
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#devServer

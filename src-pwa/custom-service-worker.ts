@@ -6,6 +6,9 @@
  * quasar.config.js > pwa > workboxMode is set to "injectManifest"
  */
 
+declare const self: ServiceWorkerGlobalScope &
+  typeof globalThis & { skipWaiting: () => void };
+
 import { clientsClaim } from 'workbox-core'
 import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching'
 import { registerRoute, NavigationRoute } from 'workbox-routing'

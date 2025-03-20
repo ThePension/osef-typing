@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import TextTypingComponent from "src/components/TextTypingComponent.vue";
 </script>
 

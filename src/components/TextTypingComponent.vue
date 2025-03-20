@@ -1,7 +1,7 @@
-<script setup>
-import { ref, onMounted } from "vue";
+<script setup lang="ts">
+import { ref, onMounted, Ref } from "vue";
 import { useLanguageStore } from "src/stores/language";
-import TEXTS_DATABASE from "src/assets/texts.json";
+import { getTexts } from "src/assets/texts";
 
 const languageStore = useLanguageStore();
 
@@ -12,12 +12,17 @@ languageStore.$onAction((event) => {
   }
 
   // Update words based on the selected language
-  AVAILABLE_TEXTS = TEXTS_DATABASE[event["args"][0]];
+  AVAILABLE_TEXTS = getTexts(event["args"][0]);
 
   initialize();
 }, false);
 
-let AVAILABLE_TEXTS = TEXTS_DATABASE[languageStore.getLanguage()];
+let AVAILABLE_TEXTS = getTexts(languageStore.getLanguage());
+
+interface Word {
+  word: string;
+  state: number;
+}
 
 let CHAR_PER_LINE = 64;
 
@@ -36,15 +41,15 @@ const WORD_STATES = {
   CURRENTLY_INCORRECT: 4,
 };
 
-const words = ref([]);
+const words: Ref<Word[]> = ref([]);
 const game_state = ref(GAME_STATES.NOT_STARTED);
 
 const user_input = ref("");
 
 const words_count = ref(0);
 
-const timer = ref(0);
-const elapsed_time = ref(0);
+const timer: Ref<NodeJS.Timeout | null> = ref(null);
+  const elapsed_time = ref(0);
 const char_count = ref(0);
 const char_line_count = ref(0);
 
@@ -68,7 +73,7 @@ const checkInput = () => {
   const last_char = user_input.value[user_input.value.length - 1];
 
   // Get first word from words variable
-  const current_word = words.value[words_count.value].word;
+  const current_word = words.value[words_count.value]?.word || "";
   const typed_word = user_input.value.trim();
 
   // If last char is not a space
@@ -78,15 +83,15 @@ const checkInput = () => {
     if (current_word == typed_word) {
 
       // Update state of current word to correct
-      words.value[words_count.value].state = WORD_STATES.CORRECT;
+      words.value[words_count.value]!.state = WORD_STATES.CORRECT;
     }
     else {
       // Update state of current word to incorrect
-      words.value[words_count.value].state = WORD_STATES.INCORRECT;
+      words.value[words_count.value]!.state = WORD_STATES.INCORRECT;
     }
 
     // If the row is completed, scroll to the next row
-    if (char_line_count.value >= CHAR_PER_LINE || char_line_count.value + words.value[words_count.value + 1].word.length > CHAR_PER_LINE) {
+    if (char_line_count.value >= CHAR_PER_LINE || char_line_count.value + words.value[words_count.value + 1]!.word.length > CHAR_PER_LINE) {
       // Remove the first line (n first word)
       words.value.splice(0, words_count.value + 1);
 
@@ -96,7 +101,7 @@ const checkInput = () => {
 
     if (words.value.length <= 24) {
       // Append a new text
-      const text = AVAILABLE_TEXTS[Math.floor(Math.random() * AVAILABLE_TEXTS.length)];
+      const text = AVAILABLE_TEXTS[Math.floor(Math.random() * AVAILABLE_TEXTS.length)]!;
 
       // Append words from text
       words.value.push(...text.split(" ").map((word) => {
@@ -107,7 +112,7 @@ const checkInput = () => {
       }));
     }
 
-    words.value[words_count.value + 1].state = WORD_STATES.TO_TYPE;
+    words.value[words_count.value + 1]!.state = WORD_STATES.TO_TYPE;
 
     // Increment words_count by 1
     words_count.value += 1;
@@ -119,10 +124,10 @@ const checkInput = () => {
   } else if (current_word.startsWith(typed_word)) {
     // Update state of current word to to_type
     char_count.value += 1;
-    words.value[words_count.value].state = WORD_STATES.TO_TYPE;
+    words.value[words_count.value]!.state = WORD_STATES.TO_TYPE;
   } else {
     // Update state of current word to currently_incorrect
-    words.value[words_count.value].state = WORD_STATES.CURRENTLY_INCORRECT;
+    words.value[words_count.value]!.state = WORD_STATES.CURRENTLY_INCORRECT;
   }
 
   // Calculate WPM : a word has 5 characters on average
@@ -146,9 +151,12 @@ const initialize = () => {
   char_line_count.value = 0;
 
   // Focus on the input box
-  document.querySelector(".q-input").focus();
+  const inputElement = document.querySelector(".q-input");
+  if (inputElement) {
+    (inputElement as HTMLInputElement).focus();
+  }
 
-  const text = AVAILABLE_TEXTS[Math.floor(Math.random() * AVAILABLE_TEXTS.length)];
+  const text = AVAILABLE_TEXTS[Math.floor(Math.random() * AVAILABLE_TEXTS.length)]!;
 
   // Initialize words from text
   words.value = text.split(" ").map((word) => {
@@ -159,10 +167,12 @@ const initialize = () => {
   });
 
   // Set the first word to TO_TYPE
-  words.value[0].state = WORD_STATES.TO_TYPE;
+  words.value[0]!.state = WORD_STATES.TO_TYPE;
 
   // Stop timer
-  clearInterval(timer.value);
+  if (timer.value !== null) {
+    clearInterval(timer.value);
+  }
   elapsed_time.value = 0;
   wpm.value = 0;
 }

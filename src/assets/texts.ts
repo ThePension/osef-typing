@@ -1,4 +1,4 @@
-{
+const TEXTS_DATABASE: { [key: string]: string[] } = {
   "FR": [
       "Le soleil brille haut dans le ciel, apportant chaleur et lumière à tous. Il illumine les champs, les rivières, et les montagnes, créant une scène paisible et magnifique. Ce moment de calme est un véritable cadeau de la nature.",
       "Les enfants jouent joyeusement dans le parc, courant et riant sans souci. Ils s'amusent avec leurs amis, inventant des jeux et des histoires incroyables. L'air est rempli de rires et de bonheur, et chaque sourire est une pureté.",
@@ -35,4 +35,8 @@
       "Die schneebedeckten Berge bieten einen atemberaubenden und majestätischen Blick. Ihre Gipfel scheinen den Himmel zu berühren, und der Schnee bedeckt jede Ecke, was ein Bild absoluter Reinheit schafft. Die frische Bergluft belebt sowohl den Körper als auch den Geist.",
       "Der Duft von frisch gebackenem Brot erfüllt das Haus mit Wärme und Freude. Es ist ein beruhigender Duft, der Kindheitserinnerungen und Momente im Kreise der Familie weckt. Frisch gebackenes Brot, warm und knusprig, ist immer ein Symbol für Zusammengehörigkeit und Zuhause."
   ]
+};
+
+export function getTexts(lang: string): string[] {
+  return (TEXTS_DATABASE[lang] || TEXTS_DATABASE["EN"])!;
 }

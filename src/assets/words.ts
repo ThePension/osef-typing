@@ -1,4 +1,4 @@
-{
+const WORDS_DATABASE: { [key: string]: string[] } = {
   "FR": [
       "de",
       "à",
@@ -304,4 +304,8 @@
       "verlieren",
       "gewinnen"
   ]
+};
+
+export function getWords(lang: string): string[] {
+    return (WORDS_DATABASE[lang] || WORDS_DATABASE["EN"])!;
 }
