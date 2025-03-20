@@ -223,21 +223,45 @@ onMounted(() => {
     <!-- Rectangle box for displaying words, using words variable -->
     <div class="row" style="max-width: 800px">
 
+      
+
       <div id="words_box" class="col" style="word-wrap: break-word;">
         <span v-for="word in words" :key="word.word + Math.random()">
-          <span  :style="{ 
-            color: word.state === 1 ? 'green' : word.state === 2 || word.state === 4 ? 'red' : 'black',
-            backgroundColor: word.state === 3 || word.state === 4 ? 'yellow' : 'white',
-            }">
+          <span :style="{ 
+                color: word.state === 1 ? 'green' : word.state === 2 || word.state === 4 ? 'red' : 'black',
+                backgroundColor: word.state === 3 || word.state === 4 ? 'yellow' : 'white',
+              }"
+            >
             {{ word.word }}  
           </span>{{ " " }}</span>
       </div>
     </div>
 
     <!-- Input for user typing input -->
-    <div id="input-box">
-      <q-input id="input" filled v-model="user_input" @update:model-value="checkInput"/>
-    </div>
+
+    <div id="input-box" class="row">
+      <q-input id="input"
+              class="col" 
+                filled 
+                v-model="user_input" 
+                @update:model-value="checkInput"
+                
+      />
+
+      <q-avatar rounded 
+                color="purple" @click="emit('refresh')" 
+                label="Refresh" 
+                icon="bi-arrow-clockwise" 
+                size="55px" 
+                style="margin-left: 10px"
+                text-color="white"
+      >
+      <q-tooltip>
+          Use the escape key to refresh
+      </q-tooltip>
+    </q-avatar>
+
+  </div>
 
   </div>
 </template>

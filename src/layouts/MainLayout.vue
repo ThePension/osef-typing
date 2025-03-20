@@ -10,7 +10,6 @@ const drawer = ref(false)
 
 const innerWidth = ref(window.innerWidth)
 
-// Create languages list from the LANGUAGES dictionary
 const languagesList = Object.values(LANGUAGES);
 
 const menuList = [
@@ -69,8 +68,6 @@ const menuList = [
           </a>
 
         </q-toolbar>
-
-        {{  currentRouteName }}
         
       </q-header>
 
