@@ -1,55 +1,73 @@
 <script setup lang="ts">
 import { ref, onMounted, Ref } from "vue";
-import { useLanguageStore } from "src/stores/language";
-import { getTexts } from "src/assets/texts";
 
-const languageStore = useLanguageStore();
-
-// Subscribed to the language store and update the words based on the selected language
-languageStore.$onAction((event) => {
-  if (event.name !== "setLanguage") {
-    return;
-  }
-
-  // Update words based on the selected language
-  AVAILABLE_TEXTS = getTexts(event["args"][0]);
-
-  initialize();
-}, false);
-
-let AVAILABLE_TEXTS = getTexts(languageStore.getLanguage());
-
-interface Word {
-  word: string;
-  state: number;
-}
-
-let CHAR_PER_LINE = 64;
-
-const GAME_STATES = {
-  NOT_STARTED: 0,
-  IN_PROGRESS: 1
+const enum GAME_STATES {
+  NOT_STARTED,
+  IN_PROGRESS
 };
 
 // Word state enum (not typed, correct, incorrect)
-const WORD_STATES = {
-  NOT_TYPED: 0,
-  CORRECT: 1,
-  INCORRECT: 2,
-  TO_TYPE: 3,
+const enum WORD_STATES {
+  NOT_TYPED,
+  CORRECT,
+  INCORRECT,
+  TO_TYPE,
   // If the currently typed word is incorrect
-  CURRENTLY_INCORRECT: 4,
+  CURRENTLY_INCORRECT,
 };
 
-const words: Ref<Word[]> = ref([]);
+interface Word {
+  word: string;
+  state: WORD_STATES;
+}
+
+const props = defineProps<{
+  words_: string[];
+}>();
+
+const emit = defineEmits(["refresh", "endOfWords"]);
+
+let CHAR_PER_LINE = 64;
+
+const words_count = ref(0);
+const words: Ref<Word[]> = ref(props.words_.map((word) => {
+  return {
+    word: word,
+    state: WORD_STATES.NOT_TYPED,
+  };
+}));
+
+const appendNewLineOfWords = (newLine: string[]) => {
+  words.value.push(...newLine.map((word) => {
+    return {
+      word: word,
+      state: WORD_STATES.NOT_TYPED,
+    };
+  }));
+};
+
+const refreshWords = (newWords: string[]) => {
+  words.value = newWords.map((word) => {
+    return {
+      word: word,
+      state: WORD_STATES.NOT_TYPED,
+    };
+  });
+
+  initialize();
+};
+
+defineExpose({
+  appendNewLineOfWords,
+  refreshWords,
+});
+
 const game_state = ref(GAME_STATES.NOT_STARTED);
 
 const user_input = ref("");
 
-const words_count = ref(0);
-
 const timer: Ref<NodeJS.Timeout | null> = ref(null);
-  const elapsed_time = ref(0);
+const elapsed_time = ref(0);
 const char_count = ref(0);
 const char_line_count = ref(0);
 
@@ -100,16 +118,7 @@ const checkInput = () => {
     }
 
     if (words.value.length <= 24) {
-      // Append a new text
-      const text = AVAILABLE_TEXTS[Math.floor(Math.random() * AVAILABLE_TEXTS.length)]!;
-
-      // Append words from text
-      words.value.push(...text.split(" ").map((word) => {
-        return {
-          word: word,
-          state: WORD_STATES.NOT_TYPED,
-        };
-      }));
+      emit("endOfWords");
     }
 
     words.value[words_count.value + 1]!.state = WORD_STATES.TO_TYPE;
@@ -137,7 +146,7 @@ const checkInput = () => {
 // If the user press on the escape key
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    initialize();
+    emit("refresh");
   }
 });
 
@@ -156,16 +165,6 @@ const initialize = () => {
     (inputElement as HTMLInputElement).focus();
   }
 
-  const text = AVAILABLE_TEXTS[Math.floor(Math.random() * AVAILABLE_TEXTS.length)]!;
-
-  // Initialize words from text
-  words.value = text.split(" ").map((word) => {
-    return {
-      word: word,
-      state: WORD_STATES.NOT_TYPED,
-    };
-  });
-
   // Set the first word to TO_TYPE
   words.value[0]!.state = WORD_STATES.TO_TYPE;
 
@@ -178,8 +177,6 @@ const initialize = () => {
 }
 
 onMounted(() => {
-  initialize();
-
   // Calculate char per line based on the width of the window
   CHAR_PER_LINE = Math.floor(Math.min(800, Math.floor(window.innerWidth)) / 12.5);
 });
@@ -227,7 +224,7 @@ onMounted(() => {
     <div class="row" style="max-width: 800px">
 
       <div id="words_box" class="col" style="word-wrap: break-word;">
-        <span v-for="word in words" :key="word">
+        <span v-for="word in words" :key="word.word + Math.random()">
           <span  :style="{ 
             color: word.state === 1 ? 'green' : word.state === 2 || word.state === 4 ? 'red' : 'black',
             backgroundColor: word.state === 3 || word.state === 4 ? 'yellow' : 'white',
