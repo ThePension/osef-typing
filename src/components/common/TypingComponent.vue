@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, Ref } from "vue";
+import { ref, onMounted, onUnmounted, Ref } from "vue";
 
 const enum GAME_STATES {
   NOT_STARTED,
@@ -72,6 +72,10 @@ const char_count = ref(0);
 const char_line_count = ref(0);
 
 const wpm = ref(0);
+const accuracy = ref(100);
+const correct_words = ref(0);
+const incorrect_words = ref(0);
+const formatted_time = ref("0:00");
 
 // Function for checking if user input is correct
 const checkInput = () => {
@@ -84,6 +88,11 @@ const checkInput = () => {
     timer.value = setInterval(() => {
       // Increment elapsed_time by 1
       elapsed_time.value += 0.01;
+
+      // Format time as M:SS
+      const minutes = Math.floor(elapsed_time.value / 60);
+      const seconds = Math.floor(elapsed_time.value % 60);
+      formatted_time.value = `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }, 10);
   }
 
@@ -102,11 +111,17 @@ const checkInput = () => {
 
       // Update state of current word to correct
       words.value[words_count.value]!.state = WORD_STATES.CORRECT;
+      correct_words.value += 1;
     }
     else {
       // Update state of current word to incorrect
       words.value[words_count.value]!.state = WORD_STATES.INCORRECT;
+      incorrect_words.value += 1;
     }
+
+    // Calculate accuracy
+    const total_words = correct_words.value + incorrect_words.value;
+    accuracy.value = total_words > 0 ? Math.round((correct_words.value / total_words) * 100) : 100;
 
     // If the row is completed, scroll to the next row
     if (char_line_count.value >= CHAR_PER_LINE || char_line_count.value + words.value[words_count.value + 1]!.word.length > CHAR_PER_LINE) {
@@ -143,12 +158,12 @@ const checkInput = () => {
   wpm.value = Math.round(char_count.value / 5.0 / (elapsed_time.value / 60.0));
 };
 
-// If the user press on the escape key
-window.addEventListener("keydown", (e) => {
+// ESC key handler
+const handleEscapeKey = (e: KeyboardEvent) => {
   if (e.key === "Escape") {
     emit("refresh");
   }
-});
+};
 
 const initialize = () => {
   game_state.value = GAME_STATES.NOT_STARTED;
@@ -158,6 +173,9 @@ const initialize = () => {
   words_count.value = 0;
   char_count.value = 0;
   char_line_count.value = 0;
+  correct_words.value = 0;
+  incorrect_words.value = 0;
+  accuracy.value = 100;
 
   // Focus on the input box
   const inputElement = document.querySelector(".q-input");
@@ -174,11 +192,26 @@ const initialize = () => {
   }
   elapsed_time.value = 0;
   wpm.value = 0;
+  formatted_time.value = "0:00";
 }
 
-onMounted(() => {
-  // Calculate char per line based on the width of the window
+// Update CHAR_PER_LINE calculation
+const updateCharPerLine = () => {
   CHAR_PER_LINE = Math.floor(Math.min(800, Math.floor(window.innerWidth)) / 12.5);
+};
+
+onMounted(() => {
+  updateCharPerLine();
+  window.addEventListener("resize", updateCharPerLine);
+  window.addEventListener("keydown", handleEscapeKey);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("resize", updateCharPerLine);
+  window.removeEventListener("keydown", handleEscapeKey);
+  if (timer.value !== null) {
+    clearInterval(timer.value);
+  }
 });
 </script>
 
@@ -213,27 +246,90 @@ onMounted(() => {
     font-size: 20px;
     margin-top: 20px;
   }
+
+  .word-transition {
+    transition: color 0.2s ease, background-color 0.2s ease;
+  }
+
+  .line-fade-enter-active {
+    transition: all 0.3s ease-out;
+  }
+
+  .line-fade-leave-active {
+    transition: all 0.3s ease-in;
+  }
+
+  .line-fade-enter-from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  .line-fade-leave-to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  .cursor-position {
+    position: relative;
+  }
+
+  .cursor-position::before {
+    content: '';
+    position: absolute;
+    left: -1px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #1976d2;
+    animation: blink 1s infinite;
+  }
+
+  @keyframes blink {
+    0%, 49% {
+      opacity: 1;
+    }
+    50%, 100% {
+      opacity: 0;
+    }
+  }
 </style>
 
 <template>
   <div>
-    <!-- Display WPM -->
-    <div id="wpm">{{ wpm }} WPM</div>
+    <!-- Display WPM, Accuracy, and Time -->
+    <div id="wpm">
+      <span>{{ wpm }} WPM</span>
+      <span style="margin-left: 20px;">{{ accuracy }}% Accuracy</span>
+      <span style="margin-left: 20px;">{{ formatted_time }}</span>
+    </div>
 
     <!-- Rectangle box for displaying words, using words variable -->
     <div class="row" style="max-width: 800px">
 
-      
+
 
       <div id="words_box" class="col" style="word-wrap: break-word;">
-        <span v-for="word in words" :key="word.word + Math.random()">
-          <span :style="{ 
+        <TransitionGroup name="line-fade">
+          <span v-for="(word, index) in words" :key="word.word + index">
+            <span
+              class="word-transition"
+              :style="{
                 color: word.state === 1 ? 'green' : word.state === 2 || word.state === 4 ? 'red' : 'black',
                 backgroundColor: word.state === 3 || word.state === 4 ? 'yellow' : 'white',
               }"
             >
-            {{ word.word }}  
-          </span>{{ " " }}</span>
+              <template v-if="index === words_count">
+                <!-- Current word with cursor indicator -->
+                <template v-for="(char, charIndex) in word.word" :key="charIndex">
+                  <span :class="{ 'cursor-position': charIndex === user_input.trim().length }">{{ char }}</span>
+                </template>
+              </template>
+              <template v-else>
+                {{ word.word }}
+              </template>
+            </span>{{ " " }}
+          </span>
+        </TransitionGroup>
       </div>
     </div>
 
