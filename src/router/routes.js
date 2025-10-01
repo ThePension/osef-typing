@@ -5,7 +5,8 @@ const routes = [
     children: [
       { path: "", component: () => import("src/pages/WordsTypingPage.vue") },
       { path: "words", component: () => import("src/pages/WordsTypingPage.vue") },
-      { path: "text", component: () => import("src/pages/TextTypingPage.vue") }
+      { path: "text", component: () => import("src/pages/TextTypingPage.vue") },
+      { path: "wordfall", component: () => import("src/pages/WordfallPage.vue") }
     ],
   },
 

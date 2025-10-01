@@ -21,6 +21,10 @@ const menuList = [
     label: 'Text Typing',
     route: '/text',
   },
+  {
+    label: 'Wordfall',
+    route: '/wordfall',
+  },
 ]
 
 </script>
